@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BSP Protected Consignment</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f1f3f5;margin:0;padding:24px}
+.card{max-width:460px;margin:55px auto;background:white;padding:24px;border-radius:14px;box-shadow:0 2px 12px #0002}
+h2{color:#174b32}input,button{box-sizing:border-box;width:100%;padding:14px;margin:10px 0;border-radius:8px;font-size:16px}
+input{border:1px solid #aaa}button{background:#176b3a;color:white;border:0;font-weight:bold}
+pre{white-space:pre-wrap;line-height:1.5;text-align:left}#msg{font-weight:bold}
+</style>
+</head>
+<body><main class="card">
+<h2>Bulleh Shah Packaging Pvt. Ltd.</h2>
+<p>Enter password to view consignment details.</p>
+<form id="form">
+<input id="pw" type="password" placeholder="Enter password" autocomplete="current-password" required>
+<button type="submit">Unlock details</button>
+</form>
+<p id="msg" role="status"></p><pre id="details" hidden></pre>
+</main>
+<script>
+const encrypted = "2/bpkEfn7TerAmvvzUX+DMexD5a+ypPvqddXsKsaBzbGcObiyBjALQHPggqmXQZvWC4qCcyGV68Dc7KuaOnEf2RvYABxRa9nqetmZKEnGs66BAvTia200BO0Ott99UUNdSTGMX8T2JL4Weg4D6YQRABBdTR9SSQgnCrTJADI/7pd/C0DqyftnNtqGLJgNp9cOv1/rjSF2FUpkKxaVjasW/E/QjO8hXC/rV24DcucwVTuwzFAomEdMIIYrZJEHt/w8G0TnYV6pIAUwGbCRI5wmS7AG+zyPZqvnu0e1HnHThhU5JuV9L7S9OJ4NBcP1tql";
+const fromB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+document.getElementById("form").addEventListener("submit", async e => {
+ e.preventDefault();
+ const msg=document.getElementById("msg"), out=document.getElementById("details");
+ out.hidden=true; out.textContent=""; msg.textContent="";
+ try {
+  const raw=fromB64(encrypted), salt=raw.slice(0,16), nonce=raw.slice(16,28), data=raw.slice(28);
+  const material=await crypto.subtle.importKey("raw",new TextEncoder().encode(document.getElementById("pw").value),"PBKDF2",false,["deriveKey"]);
+  const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:250000,hash:"SHA-256"},material,{name:"AES-GCM",length:256},false,["decrypt"]);
+  const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:nonce},key,data);
+  out.textContent=new TextDecoder().decode(plain); out.hidden=false; msg.textContent="Access granted.";
+ } catch (_) { msg.textContent="Incorrect password. Please try again."; }
+});
+</script></body></html>
