@@ -1,0 +1,51 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BSP Protected QR</title>
+<style>
+body{font-family:Arial;background:#f1f3f5;padding:25px;text-align:center}
+.box{background:white;padding:25px;border-radius:15px;max-width:420px;margin:50px auto}
+input,button{padding:14px;width:90%;margin:10px;border-radius:8px}
+button{background:#176b3a;color:white;border:0;font-weight:bold}
+pre{white-space:pre-wrap;text-align:left}
+</style>
+</head>
+<body>
+<div class="box">
+<h2>Bulleh Shah Packaging</h2>
+<h3>🔒 Protected Consignment Details</h3>
+<input id="pw" type="password" placeholder="Enter Password">
+<button onclick="unlock()">Unlock Details</button>
+<p id="msg"></p>
+<pre id="details"></pre>
+</div>
+<script>
+const encrypted="UT6qJXkboU3JutqWFuTnZnyBWWQgNtPZfAe2h8qOZx6+UEdkYGTkvW68rRhw2OuMjT8wiIADKzHSQjHYhceUIMneqBMs12G2JjTqJvcWu5SkcW2D47d2W924Q/xQ/XWTBGLKx6BV7+nZuXJ2JTrjLR5/bY+ePlOIzN5xCQeFhG8d1FHhEezADnjpUQKpsh3s1kmqe3t4oF5lsNjLhmLM/XWbUT+p+++Wt86FSc7jMgDDcw5bq0qJYOd76n0/j2S0QWQVh6AKSTa1vauTt9C45TSolr9pwDEhlNRshYYBzFs7HQtjRpS0a9ERDrW+XZ2m";
+
+async function unlock(){
+try{
+const raw=Uint8Array.from(atob(encrypted),c=>c.charCodeAt(0));
+const salt=raw.slice(0,16);
+const nonce=raw.slice(16,28);
+const data=raw.slice(28);
+const material=await crypto.subtle.importKey(
+"raw",new TextEncoder().encode(document.getElementById("pw").value),
+"PBKDF2",false,["deriveKey"]);
+const key=await crypto.subtle.deriveKey(
+{name:"PBKDF2",salt,iterations:250000,hash:"SHA-256"},
+material,{name:"AES-GCM",length:256},false,["decrypt"]);
+const result=await crypto.subtle.decrypt(
+{name:"AES-GCM",iv:nonce},key,data);
+document.getElementById("details").textContent=
+new TextDecoder().decode(result);
+document.getElementById("msg").textContent="Access Granted!";
+}catch(e){
+document.getElementById("msg").textContent="Wrong Password!";
+document.getElementById("details").textContent="";
+}
+}
+</script>
+</body>
+</html>
